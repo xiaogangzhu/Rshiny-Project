@@ -1,0 +1,4 @@
+*.RData
+*.Rhistory
+data_clean/
+data_origin/
