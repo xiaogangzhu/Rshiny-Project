@@ -10,40 +10,41 @@ shinyServer(function(input, output){
   
   output$UV <- renderInfoBox({
     UV = df_summary()[1,1]
-    infoBox("User View",UV,icon = icon("hand-o-up"))
+    infoBox("User View",UV,icon = icon("user"))
   })
   
   output$PV <- renderInfoBox({
     PV = df_summary()[1,2]
-    infoBox("Page View",PV,icon = icon("hand-o-up"))
+    infoBox("Page View",PV,icon = icon("mouse"))
   })
   
   output$PV.UV <- renderInfoBox({
-    infoBox("Page View per person",df_summary()[1,2]/df_summary()[1,1],icon = icon("hand-o-up"))
+    infoBox("Page View per person",df_summary()[1,2]/df_summary()[1,1],icon = icon("percentage"))
   })
   
   output$sales <- renderInfoBox({
-    infoBox("Sales",df_summary()[1,3],icon = icon("hand-o-up"))
+    infoBox("Sales",df_summary()[1,3],icon = icon("shopping-cart"))
   })
   
   output$revenue <- renderInfoBox({
     revenue = df_tot %>% 
       filter(event_type=='purchase') %>% 
       summarise(revenue = sum(price))
-    infoBox("Revenue",revenue[1,1],icon = icon("hand-o-up"))
+    infoBox("Revenue",revenue[1,1],icon = icon("dollar-sign"))
   })
   
   output$cr <- renderInfoBox({
-    infoBox("Conversion Rate",paste0(round(df_tot_cr[1,4],4)*100,'%'),icon = icon("hand-o-up"))
+    infoBox("Conversion Rate",paste0(round(df_tot_cr[1,4],4)*100,'%'),icon = icon("hand-o-up") )
   })
   
   output$rpr <- renderInfoBox({
-    infoBox("Repurchase Rate",paste0(round(df_tot_cr[1,5],4)*100,'%'),icon = icon("hand-o-up"))
+    infoBox("Repurchase Rate",paste0(round(df_tot_cr[1,5],4)*100,'%'),icon = icon("exchange-alt"))
   })
   
   output$dygraph <- renderDygraph({
-    dygraph(tidy_xts_date[,input$metrics],main='2018 Stock Price') %>%
+    dygraph(tidy_xts_date[,input$metrics],main='Different Metrics change by date') %>%
        dyAxis("x", drawGrid = T)%>%
+       dyAxis('y',drawGrid = T) %>% 
        #dySeries("UV.PV", label = "Highest Price") %>%
       # dySeries("Low", label = "Lowest Price")%>%
       # dySeries("Adjusted", label = "Adjusted Price")%>%
@@ -173,7 +174,7 @@ shinyServer(function(input, output){
       group_by(month,event_type) %>% 
       summarise(count = n()) %>% 
       spread(event_type,count) %>% 
-      gvisComboChart(options=list(width=2000, height=1000,series = "{3: {type: 'bars'}}",lineWidth = 5))
+      gvisComboChart(options=list(title = 'User Behavior Pattern by month',width=2000, height=1000,series = "{3: {type: 'bars'}}",lineWidth = 5))
     
     
   })
@@ -184,7 +185,7 @@ shinyServer(function(input, output){
       group_by(Date,event_type) %>% 
       summarise(count = n()) %>% 
       spread(event_type,count) %>% 
-      gvisComboChart(options=list(width=2000, height=1000,series = "{3: {type: 'bars'}}",lineWidth = 5))
+      gvisComboChart(options=list(title = 'User Behavior Pattern by day',width=2000, height=1000,series = "{3: {type: 'bars'}}",lineWidth = 5))
     
     
   })
@@ -195,7 +196,7 @@ shinyServer(function(input, output){
       group_by(wday,event_type) %>% 
       summarise(count = n()) %>% 
       spread(event_type,count) %>% 
-      gvisComboChart(options=list(width=2000, height=1000,series = "{3: {type: 'bars'}}",lineWidth = 5))
+      gvisComboChart(options=list(title = 'User Behavior Pattern by week',width=2000, height=1000,series = "{3: {type: 'bars'}}",lineWidth = 5))
     
     
   })
@@ -206,7 +207,39 @@ shinyServer(function(input, output){
       group_by(hour,event_type) %>% 
       summarise(count = n()) %>% 
       spread(event_type,count) %>% 
-      gvisComboChart(options=list(width=2000, height=1000,series = "{3: {type: 'bars'}}",lineWidth = 5))
+      gvisComboChart(options=list(title = 'User Behavior Pattern by hour',width=2000, height=1000,series = "{3: {type: 'bars'}}",lineWidth = 5))
+    
+    
+  })
+  
+  output$category <- renderPlotly({
+    df_tot %>% 
+      group_by(category_id) %>% 
+      summarise(total = sum(event_type == input$type)) %>% 
+      arrange(by = desc(total)) %>% 
+      top_n(20,total) %>% 
+      ggplot(aes(x=reorder(category_id,total),y = total)) + geom_col() + 
+      coord_flip() + 
+      theme_economist() + 
+      scale_fill_economist() +
+      ylab(paste0("Total ",input$type)) + xlab("Category_id") +
+      ggtitle(paste0("Top 20 Most ",input$type ," Category"))
+    
+    
+  })
+  
+  output$product <- renderPlotly({
+    df_tot %>% 
+      group_by(product_id) %>% 
+      summarise(total = sum(event_type == input$type)) %>% 
+      arrange(by = desc(total)) %>% 
+      top_n(20,total) %>% 
+      ggplot(aes(x=reorder(product_id,total),y = total)) + geom_col() + 
+      coord_flip() + 
+      theme_economist() + 
+      scale_fill_economist() +
+      ylab(paste0("Total ",input$type)) + xlab("Product_id") +
+      ggtitle(paste0("Top 20 Most ",input$type ," Product"))
     
     
   })

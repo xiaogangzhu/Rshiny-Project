@@ -1,38 +1,11 @@
+library(dplyr)
 # read all files into a list all_dfs
 csv_filenames = list.files(path = './data_origin',pattern = '*.csv')
 csv_filepaths = paste0('./data_origin/',csv_filenames[c(1,5,4)])
 all_dfs <- lapply( csv_filepaths, FUN = function( fp ) read.csv( fp, stringsAsFactors = F ,na.strings="") )
 
 
-# sapply(df, function(x) sum(is.na(x)))
-# df= all_dfs[[2]]
-# df$Time = as_hms(df$Time)
-# df$Date = parse_date_time(df$Date,order = c("Ymd"))
-# df = df %>% 
-#   separate(event_time,c("Date","Time"),sep = "[\\s]+")
-# str(df)
-# head(df)
-# 
-# df %>% 
-#   filter(Date == as.Date("2019-12-01")) %>% 
-#   group_by(hour) %>% 
-#   summarise(n=n()) %>% 
-#   ggplot(aes(x=hour,y=n)) + geom_col()
-#   
-# df = df %>% 
-#   filter(df$price>0) %>% 
-#   select(-category_code,-user_session,-brand) %>% 
-#   mutate(event_time = parse_date_time(event_time,order = c("Ymd HMS")),
-#          Date = ymd(format(event_time,"%Y-%m-%d")),
-#          month = format(event_time,"%Y-%m"),
-#          week = strftime(event_time,format="%W"),
-#          wday = wday(Date,label = TRUE),
-#          hour = hour(event_time)) %>% 
-#   select(-event_time)
-# 
-# time = head(df$event_time,14)
-# strftime(time,format="%W")
-# unique(df$week)
+
 # transfer the event_time to datetiem type and extract month,day,wday and hour
 clean_data = function(df){
   require(lubridate)
@@ -59,6 +32,35 @@ create_df_tot <- function( df_lst ){
 }
 df_tot = create_df_tot(all_dfs_clean)
 saveRDS(df_tot, './data_clean/df_tot.RDS')
+
+#get metrics for date
+dates <- seq(as.Date("2019-12-01"), length = 91, by = "days")
+df_tot1_date = df_tot %>% 
+  group_by(Date) %>% 
+  summarise(UV = n_distinct(user_id),
+            PV = sum(event_type =='view'),
+            UV.PV = UV/PV,
+            sales = sum(event_type== 'purchase'))
+df_tot2_date = df_tot %>%
+  filter(event_type=='purchase') %>%
+  group_by(Date) %>%
+  summarise(revenue = sum(price))
+
+df_tot3_date = df_tot %>% 
+  group_by(Date,user_id) %>% 
+  summarise(purchase = sum(event_type=='purchase')
+  ) %>% 
+  summarise(purchase_user = sum(purchase>0),
+            purchase_more_than_once = sum(purchase>1),
+            all_user = n(),
+            conver_rate = purchase_user/all_user,
+            repurchase_rate = purchase_more_than_once/purchase_user) %>% 
+  select(-purchase_user,-purchase_more_than_once,-all_user)
+
+df_sum_date = cbind(df_tot1_date,df_tot2_date[,-1],df_tot3_date[,-1])  
+saveRDS(df_sum_date, './data_clean/df_sum_date.RDS')
+
+
 # create user dataset
 df_tot_user <- df_tot %>% 
   group_by(user_id) %>% 

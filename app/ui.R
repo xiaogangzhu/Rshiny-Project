@@ -7,7 +7,8 @@ shinyUI(dashboardPage(
       menuItem("Funnel Analysis", tabName = "tunnel", icon = icon("funnel-dollar")),
       menuItem("User Active Pattern", tabName = "active", icon = icon("chart-bar")),
       menuItem("Product Analysis", tabName = "product", icon = icon("box-open")),
-      menuItem("Detect Valuavle Users", tabName = "users", icon = icon("users"))
+      menuItem("Detect Valuavle Users", tabName = "users", icon = icon("users")),
+      menuItem("About me", tabName = "aboutme", icon = icon("address-card"))
       
       
     
@@ -32,8 +33,9 @@ shinyUI(dashboardPage(
                           tabPanel("Plot",
                                    fluidRow(
                                      column(width = 12,
-                                            selectizeInput("metrics","Select metrics by day",
-                                                           choice = colnames(df_sum_date)[-1]))),
+                                            checkboxGroupInput("metrics","Select metrics by day",
+                                                           choices = choice_var,
+                                                           selected = c("UV","PV")))),
                                    fluidRow(box(width = 12,dygraphOutput('dygraph')))
                                    
                                    
@@ -44,8 +46,8 @@ shinyUI(dashboardPage(
       tabItem(tabName = "tunnel",
               tabsetPanel(type = "tabs",
                     tabPanel("Funnel Analysis by Behaviour",
-                      fluidRow( box(width = 12,plotlyOutput("tunnel1"))),
-                      fluidRow( box(width = 12,plotlyOutput("tunnel2")))
+                      fluidRow( box(title = "View-Cart-Purchase",width = 12,plotlyOutput("tunnel1"))),
+                      fluidRow( box(title = "View-Cart-remove_from_cart",width = 12,plotlyOutput("tunnel2")))
                       
                     
                      
@@ -54,14 +56,14 @@ shinyUI(dashboardPage(
                     ),
                     tabPanel("Funnel Analysis by Distinct Users",
                              column(width = 6 ,
-                                    selectizeInput("overall","Select summary tunnel path",
+                                    selectizeInput("overall","Select summary funnel path",
                                             choice = c("view-cart-purchase","view-cart-remove from cart"))),
                              
-                             fluidRow(box(title = "aaa",width = 12,plotlyOutput("tunnel3"))),
+                             fluidRow(box(title = "Summary user funnel",width = 12,plotlyOutput("tunnel3"))),
                              column(width = 6 ,
-                                    selectizeInput("path","Select specific tunnel path",
+                                    selectizeInput("path","Select specific funnel path",
                                                    choice = c("view-purchase","view-cart-purchase","view-cart-remove from cart"))),
-                             fluidRow(box(title = "aaa",width = 12,plotlyOutput("tunnel4")))      
+                             fluidRow(box(title = "Specified funnel path",width = 12,plotlyOutput("tunnel4")))      
                                       
                                       )
                 
@@ -108,10 +110,18 @@ shinyUI(dashboardPage(
                         )),
       
       tabItem(tabName = "product",
-            "to be replaced with product"),
+              column(width = 6,
+                     selectizeInput("type", "Select type",
+                             choice = unique(df_tot$event_type))),
+              fluidRow(box(width = 12,plotlyOutput("category")),
+                       box(width = 12,plotlyOutput('product')))
+              
+              
+              ),
       
       tabItem(tabName = "users",
-            "to be replaced with users")
+            "to be replaced with users"),
+      tabItem(tabName = "aboutme","I am Xiaogang Zhu")
     )
   )
 ))
